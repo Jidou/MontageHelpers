@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters.Internal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace MontageJobExecutor.Controllers {
@@ -15,11 +16,13 @@ namespace MontageJobExecutor.Controllers {
     public class JobsController : ControllerBase {
 
         private readonly ILogger _logger;
+        private readonly string _montageBinaryFilesPath;
         private const string BasePath = "ExecutionResults";
 
 
-        public JobsController(ILogger<JobsController> logger) {
+        public JobsController(ILogger<JobsController> logger, IConfiguration config) {
             _logger = logger;
+            _montageBinaryFilesPath = config["MontageBinaryFilesPath"];
         }
 
 
@@ -31,7 +34,7 @@ namespace MontageJobExecutor.Controllers {
 
                 var process = new Process {
                     StartInfo = new ProcessStartInfo {
-                        FileName = $"{arguments.AppName}",
+                        FileName = $"{_montageBinaryFilesPath}{arguments.AppName}",
                         Arguments =
                             $"{arguments.Flags} {arguments.FlattenInputFitFilesArrayWithPath(GetDirectory(arguments.JobId))} {arguments.FlattenOutputFitFilesArrayWithPath(GetDirectory(arguments.JobId))} {arguments.FlattenInputHdrFilesArrayWithPath(GetDirectory(arguments.JobId))}",
                         RedirectStandardOutput = true,
