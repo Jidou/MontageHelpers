@@ -10,6 +10,7 @@ namespace MontageJobExecutor {
         public string Module { get; set; }
         public string ExecutionTime { get; set; }
         public string Message { get; set; }
+        public MontageFile File { get; set; }
 
 
         public ExecutionResult(string status, string module, string executionTime) {
@@ -25,6 +26,12 @@ namespace MontageJobExecutor {
             Module = string.Empty;
             ExecutionTime = string.Empty;
             Message = message;
+        }
+
+
+        public ExecutionResult(string status, MontageFile montageFile) {
+            Status = status;
+            File = montageFile;
         }
 
 

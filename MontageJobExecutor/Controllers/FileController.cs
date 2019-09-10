@@ -22,13 +22,14 @@ namespace MontageJobExecutor.Controllers {
 
 
         [HttpGet]
-        public ActionResult<MontageFile> Get(string fileName, string jobId) {
+        public ActionResult<ExecutionResult> Get(string fileName, string jobId) {
             try {
                 var directory = GetDirectory(jobId);
                 var content = System.IO.File.ReadAllBytes($"{directory}/{fileName}");
                 var montageFile = new MontageFile(fileName, content);
+                var response = new ExecutionResult("OK", montageFile);
 
-                return montageFile;
+                return response;
                 
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during fetching file");
@@ -38,7 +39,7 @@ namespace MontageJobExecutor.Controllers {
 
 
         [HttpPost]
-        public ActionResult Post([FromBody] MontageFile file, string jobId) {
+        public ActionResult<ExecutionResult> Post([FromBody] MontageFile file, string jobId) {
             try {
                 var directory = GetDirectory(jobId);
                 Directory.CreateDirectory(directory);
@@ -47,7 +48,7 @@ namespace MontageJobExecutor.Controllers {
                     fileHandle.Write(file.Content);
                 }
 
-                return Created($"api/file/{jobId}", null);
+                return Created($"api/file/{jobId}", new ExecutionResult("OK", "File successfully copied to server"));
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during creating file");
                 return StatusCode(500);
@@ -56,11 +57,11 @@ namespace MontageJobExecutor.Controllers {
 
 
         [HttpDelete]
-        public ActionResult Delete(string fileName, string jobId) {
+        public ActionResult<ExecutionResult> Delete(string fileName, string jobId) {
             try {
                 var directory = GetDirectory(jobId);
                 System.IO.File.Delete($"{directory}/{fileName}");
-                return Ok();
+                return Ok(new ExecutionResult("OK", "File successfully deleted to server"));
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during deleting file");
                 return StatusCode(500);
