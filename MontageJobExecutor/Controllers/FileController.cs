@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,10 +25,11 @@ namespace MontageJobExecutor.Controllers {
         [HttpGet]
         public ActionResult<ExecutionResult> Get(string fileName, string jobId) {
             try {
+                var stopwatch = Stopwatch.StartNew();
                 var directory = GetDirectory(jobId);
                 var content = System.IO.File.ReadAllBytes($"{directory}/{fileName}");
                 var montageFile = new MontageFile(fileName, content);
-                var response = new ExecutionResult("OK", montageFile);
+                var response = new ExecutionResult("OK", montageFile, stopwatch.ElapsedMilliseconds.ToString());
 
                 return response;
                 
@@ -41,6 +43,7 @@ namespace MontageJobExecutor.Controllers {
         [HttpPost]
         public ActionResult<ExecutionResult> Post([FromBody] MontageFile file, string jobId) {
             try {
+                var stopwatch = Stopwatch.StartNew();
                 var directory = GetDirectory(jobId);
                 Directory.CreateDirectory(directory);
 
@@ -48,7 +51,7 @@ namespace MontageJobExecutor.Controllers {
                     fileHandle.Write(file.Content);
                 }
 
-                return Created($"api/file/{jobId}", new ExecutionResult("OK", "File successfully copied to server"));
+                return Created($"api/file/{jobId}", new ExecutionResult("OK", "File successfully copied to server", stopwatch.ElapsedMilliseconds.ToString()));
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during creating file");
                 return StatusCode(500);
@@ -59,9 +62,10 @@ namespace MontageJobExecutor.Controllers {
         [HttpDelete]
         public ActionResult<ExecutionResult> Delete(string fileName, string jobId) {
             try {
+                var stopwatch = Stopwatch.StartNew();
                 var directory = GetDirectory(jobId);
                 System.IO.File.Delete($"{directory}/{fileName}");
-                return Ok(new ExecutionResult("OK", "File successfully deleted to server"));
+                return Ok(new ExecutionResult("OK", stopwatch.ElapsedMilliseconds.ToString()));
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during deleting file");
                 return StatusCode(500);

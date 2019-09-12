@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters.Internal;
@@ -30,13 +31,27 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Post([FromBody] Arguments arguments) {
             try {
 #if !DEBUG
-                _logger.LogDebug($"Creating new process object with arguments: {arguments.ToString()}");
+                _logger.LogDebug($"Creating new process object with arguments: {arguments}");
+
+                var fileNameAndArguments = arguments.AppNameWithParameters.Split(' ');
+
+                var allArguments = new StringBuilder();
+
+                for (var i = 1; i < fileNameAndArguments.Length; i++) {
+                    if (fileNameAndArguments[i].EndsWith(".txt") || fileNameAndArguments[i].EndsWith(".fits") || fileNameAndArguments[i].EndsWith(".hdr") || fileNameAndArguments[i].EndsWith(".tbl") || fileNameAndArguments[i].EndsWith(".jpg")) {
+                        allArguments.Append($"{GetDirectory(arguments.JobId)}/{fileNameAndArguments[i]} ");
+                    } else {
+                        allArguments.Append($"{fileNameAndArguments[i]} ");
+                    }
+                }
+
+                _logger.LogDebug($"FileName: {_montageBinaryFilesPath}{fileNameAndArguments[0]}");
+                _logger.LogDebug($"Arguments: {allArguments}");
 
                 var process = new Process {
                     StartInfo = new ProcessStartInfo {
-                        FileName = $"{_montageBinaryFilesPath}{arguments.AppName}",
-                        Arguments =
-                            $"{arguments.Flags} {arguments.FlattenInputFitFilesArrayWithPath(GetDirectory(arguments.JobId))} {arguments.FlattenOutputFitFilesArrayWithPath(GetDirectory(arguments.JobId))} {arguments.FlattenInputHdrFilesArrayWithPath(GetDirectory(arguments.JobId))}",
+                        FileName = $"{_montageBinaryFilesPath}{fileNameAndArguments[0]}",
+                        Arguments = allArguments.ToString(),
                         RedirectStandardOutput = true,
                         UseShellExecute = false,
                         CreateNoWindow = true,

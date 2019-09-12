@@ -21,17 +21,18 @@ namespace MontageJobExecutor {
         }
 
 
-        public ExecutionResult(string status, string message) {
+        public ExecutionResult(string status, string executionTime) {
             Status = status;
             Module = string.Empty;
-            ExecutionTime = string.Empty;
-            Message = message;
+            ExecutionTime = executionTime;
+            Message = string.Empty;
         }
 
 
-        public ExecutionResult(string status, MontageFile montageFile) {
+        public ExecutionResult(string status, MontageFile montageFile, string executionTime) {
             Status = status;
             File = montageFile;
+            ExecutionTime = executionTime;
         }
 
 
