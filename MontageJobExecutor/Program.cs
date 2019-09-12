@@ -10,6 +10,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MontageJobExecutor {
     public class Program {
+
+        public const string BasePath = "Files";
+
         public static void Main(string[] args) {
             CreateWebHostBuilder(args).Build().Run();
         }
