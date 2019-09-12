@@ -18,7 +18,6 @@ namespace MontageJobExecutor.Controllers {
 
         private readonly ILogger _logger;
         private readonly string _montageBinaryFilesPath;
-        private const string BasePath = "ExecutionResults";
 
 
         public JobsController(ILogger<JobsController> logger, IConfiguration config) {
@@ -39,7 +38,7 @@ namespace MontageJobExecutor.Controllers {
 
                 for (var i = 1; i < fileNameAndArguments.Length; i++) {
                     if (fileNameAndArguments[i].EndsWith(".txt") || fileNameAndArguments[i].EndsWith(".fits") || fileNameAndArguments[i].EndsWith(".hdr") || fileNameAndArguments[i].EndsWith(".tbl") || fileNameAndArguments[i].EndsWith(".jpg")) {
-                        allArguments.Append($"{GetDirectory(arguments.JobId)}/{fileNameAndArguments[i]} ");
+                        allArguments.Append($"{GetDirectory()}/{fileNameAndArguments[i]} ");
                     } else {
                         allArguments.Append($"{fileNameAndArguments[i]} ");
                     }
@@ -134,8 +133,8 @@ namespace MontageJobExecutor.Controllers {
         }
 
 
-        private static string GetDirectory(string jobId) {
-            var directory = $"{Environment.CurrentDirectory}/{BasePath}/{jobId}";
+        private static string GetDirectory() {
+            var directory = $"{Environment.CurrentDirectory}/{Program.BasePath}";
             return directory;
         }
     }

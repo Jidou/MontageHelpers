@@ -14,7 +14,6 @@ namespace MontageJobExecutor.Controllers {
     public class FileController : ControllerBase {
 
         private readonly ILogger _logger;
-        private const string BasePath = "ExecutionResults";
 
 
         public FileController(ILogger<FileController> logger) {
@@ -26,7 +25,7 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Get(string fileName, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
-                var directory = GetDirectory(jobId);
+                var directory = GetDirectory();
                 var content = System.IO.File.ReadAllBytes($"{directory}/{fileName}");
                 var montageFile = new MontageFile(fileName, content);
                 var response = new ExecutionResult("OK", montageFile, stopwatch.ElapsedMilliseconds.ToString());
@@ -44,14 +43,18 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Post([FromBody] MontageFile file, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
-                var directory = GetDirectory(jobId);
+                var directory = GetDirectory();
                 Directory.CreateDirectory(directory);
 
                 using (var fileHandle = System.IO.File.Create($"{directory}/{file.Name}")) {
                     fileHandle.Write(file.Content);
                 }
 
-                return Created($"api/file/{jobId}", new ExecutionResult("OK", "File successfully copied to server", stopwatch.ElapsedMilliseconds.ToString()));
+                var elapsedTime = stopwatch.ElapsedMilliseconds.ToString();
+
+                _logger.LogDebug($"copied file in {elapsedTime}ms");
+
+                return Created($"api/file/{jobId}", new ExecutionResult("OK", "File successfully copied to server", elapsedTime));
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during creating file");
                 return StatusCode(500);
@@ -63,7 +66,7 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Delete(string fileName, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
-                var directory = GetDirectory(jobId);
+                var directory = GetDirectory();
                 System.IO.File.Delete($"{directory}/{fileName}");
                 return Ok(new ExecutionResult("OK", stopwatch.ElapsedMilliseconds.ToString()));
             } catch (Exception ex) {
@@ -73,8 +76,22 @@ namespace MontageJobExecutor.Controllers {
         }
 
 
-        private static string GetDirectory(string jobId) {
-            var directory = $"{Environment.CurrentDirectory}/{BasePath}/{jobId}";
+        [HttpDelete]
+        public ActionResult<ExecutionResult> Delete(string fileName) {
+            try {
+                var stopwatch = Stopwatch.StartNew();
+                var directory = GetDirectory();
+                System.IO.File.Delete($"{directory}/{fileName}");
+                return Ok(new ExecutionResult("OK", stopwatch.ElapsedMilliseconds.ToString()));
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error during deleting file");
+                return StatusCode(500);
+            }
+        }
+
+
+        private static string GetDirectory() {
+            var directory = $"{Environment.CurrentDirectory}/{Program.BasePath}";
             return directory;
         }
     }
