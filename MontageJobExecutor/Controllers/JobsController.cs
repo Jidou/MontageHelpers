@@ -30,7 +30,7 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Post([FromBody] Arguments arguments) {
             try {
 #if !DEBUG
-                _logger.LogDebug($"Creating new process object with arguments: {arguments}");
+                _logger.LogInformation($"Creating new process object with arguments: {arguments}");
 
                 var fileNameAndArguments = arguments.AppNameWithParameters.Split(' ');
 
@@ -44,8 +44,8 @@ namespace MontageJobExecutor.Controllers {
                     }
                 }
 
-                _logger.LogDebug($"FileName: {_montageBinaryFilesPath}{fileNameAndArguments[0]}");
-                _logger.LogDebug($"Arguments: {allArguments}");
+                _logger.LogInformation($"FileName: {_montageBinaryFilesPath}{fileNameAndArguments[0]}");
+                _logger.LogInformation($"Arguments: {allArguments}");
 
                 var process = new Process {
                     StartInfo = new ProcessStartInfo {
@@ -57,25 +57,25 @@ namespace MontageJobExecutor.Controllers {
                     }
                 };
 
-                _logger.LogDebug($"Starting process");
+                _logger.LogInformation($"Starting process");
 
                 process.Start();
 
-                _logger.LogDebug($"Reading stdout");
+                _logger.LogInformation($"Reading stdout");
 
                 var result = process.StandardOutput.ReadToEnd();
 
-                _logger.LogDebug($"Waiting for process to exit");
+                _logger.LogInformation($"Waiting for process to exit");
 
                 process.WaitForExit();
 #else
                 var result = "[struct stat=\"OK\", module=\"mProject\", time=223.0]";
 #endif
-                _logger.LogDebug($"Result: {result}");
+                _logger.LogInformation($"Result: {result}");
 
                 var response = ParseResult(result);
 
-                _logger.LogDebug(response.ToString());
+                _logger.LogInformation(response.ToString());
 
                 return response;
             } catch (Exception ex) {
@@ -99,10 +99,10 @@ namespace MontageJobExecutor.Controllers {
 
                 response = new ExecutionResult(status, module, time);
             } else if (status == "ERROR") {
-                var messageIndex = result.IndexOf("module=");
+                var messageIndex = result.IndexOf("msg=");
                 var message = GetValueFromResult(result, messageIndex, 5);
 
-                response = new ExecutionResult(status, message);
+                response = new ExecutionResult(message);
             } else {
                 var lengthOfStatus = statusIndex + 6 + status.Length + 1;
                 var restOfResult = result.Substring(lengthOfStatus, result.Length - lengthOfStatus);

@@ -52,7 +52,7 @@ namespace MontageJobExecutor.Controllers {
 
                 var elapsedTime = stopwatch.ElapsedMilliseconds.ToString();
 
-                _logger.LogDebug($"copied file in {elapsedTime}ms");
+                _logger.LogInformation($"copied file in {elapsedTime}ms");
 
                 return Created($"api/file/{jobId}", new ExecutionResult("OK", "File successfully copied to server", elapsedTime));
             } catch (Exception ex) {

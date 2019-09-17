@@ -21,6 +21,13 @@ namespace MontageJobExecutor {
         }
 
 
+        public ExecutionResult(string status, MontageFile montageFile, string executionTime) {
+            Status = status;
+            File = montageFile;
+            ExecutionTime = executionTime;
+        }
+
+
         public ExecutionResult(string status, string executionTime) {
             Status = status;
             Module = string.Empty;
@@ -29,10 +36,9 @@ namespace MontageJobExecutor {
         }
 
 
-        public ExecutionResult(string status, MontageFile montageFile, string executionTime) {
-            Status = status;
-            File = montageFile;
-            ExecutionTime = executionTime;
+        public ExecutionResult(string message) {
+            Status = "ERROR";
+            Message = message;
         }
 
 
