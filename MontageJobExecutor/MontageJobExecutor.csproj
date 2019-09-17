@@ -6,12 +6,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ExecutionResults\**" />
+    <Content Remove="ExecutionResults\**" />
+    <EmbeddedResource Remove="ExecutionResults\**" />
+    <None Remove="ExecutionResults\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ExecutionResults\ID0000002\" />
+    <Folder Include="Files\" />
   </ItemGroup>
 
 </Project>
