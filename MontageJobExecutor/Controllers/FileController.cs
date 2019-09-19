@@ -22,6 +22,7 @@ namespace MontageJobExecutor.Controllers {
 
 
         [HttpGet]
+        [DisableRequestSizeLimit]
         public ActionResult<ExecutionResult> Get(string fileName, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
@@ -40,6 +41,7 @@ namespace MontageJobExecutor.Controllers {
 
 
         [HttpPost]
+        [DisableRequestSizeLimit]
         public ActionResult<ExecutionResult> Post([FromBody] MontageFile file, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
@@ -63,6 +65,7 @@ namespace MontageJobExecutor.Controllers {
 
 
         [HttpDelete]
+        [DisableRequestSizeLimit]
         public ActionResult<ExecutionResult> Delete(string fileName) {
             try {
                 var stopwatch = Stopwatch.StartNew();

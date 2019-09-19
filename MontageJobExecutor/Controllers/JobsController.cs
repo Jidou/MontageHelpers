@@ -17,19 +17,18 @@ namespace MontageJobExecutor.Controllers {
     public class JobsController : ControllerBase {
 
         private readonly ILogger _logger;
-        private readonly string _montageBinaryFilesPath;
 
 
         public JobsController(ILogger<JobsController> logger, IConfiguration config) {
             _logger = logger;
-            _montageBinaryFilesPath = config["MontageBinaryFilesPath"];
         }
 
 
         [HttpPost]
+        [DisableRequestSizeLimit]
         public ActionResult<ExecutionResult> Post([FromBody] Arguments arguments) {
             try {
-#if !DEBUG
+#if DEBUG
                 _logger.LogInformation($"Creating new process object with arguments: {arguments}");
 
                 var fileNameAndArguments = arguments.AppNameWithParameters.Split(' ');
@@ -44,36 +43,15 @@ namespace MontageJobExecutor.Controllers {
                     }
                 }
 
-                _logger.LogInformation($"FileName: {_montageBinaryFilesPath}{fileNameAndArguments[0]}");
+                _logger.LogInformation($"FileName: {fileNameAndArguments[0]}");
                 _logger.LogInformation($"Arguments: {allArguments}");
 
-                var process = new Process {
-                    StartInfo = new ProcessStartInfo {
-                        FileName = $"{_montageBinaryFilesPath}{fileNameAndArguments[0]}",
-                        Arguments = allArguments.ToString(),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                    }
-                };
+                var response = ExecuteAndReadResult(fileNameAndArguments[0], allArguments);
 
-                _logger.LogInformation($"Starting process");
-
-                process.Start();
-
-                _logger.LogInformation($"Reading stdout");
-
-                var result = process.StandardOutput.ReadToEnd();
-
-                _logger.LogInformation($"Waiting for process to exit");
-
-                process.WaitForExit();
 #else
                 var result = "[struct stat=\"OK\", module=\"mProject\", time=223.0]";
-#endif
-                _logger.LogInformation($"Result: {result}");
-
                 var response = ParseResult(result);
+#endif
 
                 _logger.LogInformation(response.ToString());
 
@@ -82,6 +60,61 @@ namespace MontageJobExecutor.Controllers {
                 _logger.LogError(ex, "Error during job execution");
                 return StatusCode(500);
             }
+        }
+
+
+        private ExecutionResult ExecuteAndReadResult(string fileNameAndArgument, StringBuilder allArguments) {
+            var process = new Process {
+                StartInfo = new ProcessStartInfo {
+                    FileName = $"{fileNameAndArgument}",
+                    Arguments = allArguments.ToString(),
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+
+            _logger.LogInformation($"Starting process");
+
+            var stopwatch = new Stopwatch();
+            process.Start();
+
+            _logger.LogInformation($"Reading stdout");
+
+            var result = process.StandardOutput.ReadToEnd();
+
+            _logger.LogInformation($"Result: {result}");
+            _logger.LogInformation($"Waiting for process to exit");
+
+            process.WaitForExit();
+
+            var finishTime = stopwatch.ElapsedMilliseconds;
+            ExecutionResult response = null;
+
+            if (fileNameAndArgument.StartsWith("mAdd")) {
+
+            } else if (fileNameAndArgument.StartsWith("mBackground")) {
+                // TODO
+            } else if (fileNameAndArgument.StartsWith("mBgModel")) {
+                response = ParseResult(result);
+                response.ExecutionTime = finishTime.ToString();
+            } else if (fileNameAndArgument.StartsWith("mConcatFit")) {
+                response = ParseResult(result);
+                response.ExecutionTime = finishTime.ToString();
+            } else if (fileNameAndArgument.StartsWith("mDiffFit")) {
+                response = new ExecutionResult("OK", finishTime.ToString());
+            } else if (fileNameAndArgument.StartsWith("mImgtbl")) {
+                response = ParseResult(result);
+                response.ExecutionTime = finishTime.ToString();
+            } else if (fileNameAndArgument.StartsWith("mJPEG")) {
+                // TODO
+            } else if (fileNameAndArgument.StartsWith("mProject")) {
+                response = ParseResult(result);
+            } else {
+                // TODO
+            }
+
+            return response;
         }
 
 

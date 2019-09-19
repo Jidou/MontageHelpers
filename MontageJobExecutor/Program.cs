@@ -19,12 +19,14 @@ namespace MontageJobExecutor {
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-#if DEBUG
+#if !DEBUG
                 .UseKestrel()
                 .ConfigureKestrel((context, options) => {
                     options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(180);
                     options.Limits.MaxRequestBodySize = null;
                 })
+#else
+                .UseIIS()
 #endif
                 .ConfigureLogging((hostingContext, logging) => {
                     // Requires `using Microsoft.Extensions.Logging;`
