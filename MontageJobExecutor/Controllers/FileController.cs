@@ -26,7 +26,7 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Get(string fileName, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
-                var directory = GetDirectory();
+                var directory = Program.GetDirectory(jobId);
                 var content = System.IO.File.ReadAllBytes($"{directory}/{fileName}");
                 var montageFile = new MontageFile(fileName, content);
                 var response = new ExecutionResult("OK", montageFile, stopwatch.ElapsedMilliseconds.ToString());
@@ -45,7 +45,7 @@ namespace MontageJobExecutor.Controllers {
         public ActionResult<ExecutionResult> Post([FromBody] MontageFile file, string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
-                var directory = GetDirectory();
+                var directory = Program.GetDirectory(jobId);
                 Directory.CreateDirectory(directory);
 
                 using (var fileHandle = System.IO.File.Create($"{directory}/{file.Name}")) {
@@ -66,22 +66,16 @@ namespace MontageJobExecutor.Controllers {
 
         [HttpDelete]
         [DisableRequestSizeLimit]
-        public ActionResult<ExecutionResult> Delete(string fileName) {
+        public ActionResult<ExecutionResult> Delete(string jobId) {
             try {
                 var stopwatch = Stopwatch.StartNew();
-                var directory = GetDirectory();
-                System.IO.File.Delete($"{directory}/{fileName}");
+                var directory = Program.GetDirectory(jobId);
+                Directory.Delete(directory, true);
                 return Ok(new ExecutionResult("OK", stopwatch.ElapsedMilliseconds.ToString()));
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error during deleting file");
                 return StatusCode(500);
             }
-        }
-
-
-        private static string GetDirectory() {
-            var directory = $"{Environment.CurrentDirectory}/{Program.BasePath}";
-            return directory;
         }
     }
 }

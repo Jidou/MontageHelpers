@@ -17,10 +17,18 @@ namespace MontageJobExecutor.Controllers {
     public class JobsController : ControllerBase {
 
         private readonly ILogger _logger;
+        private readonly Stopwatch _stopwatch;
 
 
         public JobsController(ILogger<JobsController> logger, IConfiguration config) {
             _logger = logger;
+            _stopwatch = new Stopwatch();
+        }
+
+
+        [HttpGet]
+        public ActionResult Get() {
+            return Ok();
         }
 
 
@@ -28,7 +36,7 @@ namespace MontageJobExecutor.Controllers {
         [DisableRequestSizeLimit]
         public ActionResult<ExecutionResult> Post([FromBody] Arguments arguments) {
             try {
-#if DEBUG
+#if !DEBUG
                 _logger.LogInformation($"Creating new process object with arguments: {arguments}");
 
                 var fileNameAndArguments = arguments.AppNameWithParameters.Split(' ');
@@ -36,17 +44,13 @@ namespace MontageJobExecutor.Controllers {
                 var allArguments = new StringBuilder();
 
                 for (var i = 1; i < fileNameAndArguments.Length; i++) {
-                    if (fileNameAndArguments[i].EndsWith(".txt") || fileNameAndArguments[i].EndsWith(".fits") || fileNameAndArguments[i].EndsWith(".hdr") || fileNameAndArguments[i].EndsWith(".tbl") || fileNameAndArguments[i].EndsWith(".jpg")) {
-                        allArguments.Append($"{GetDirectory()}/{fileNameAndArguments[i]} ");
-                    } else {
-                        allArguments.Append($"{fileNameAndArguments[i]} ");
-                    }
+                    allArguments.Append($"{fileNameAndArguments[i]} ");
                 }
 
                 _logger.LogInformation($"FileName: {fileNameAndArguments[0]}");
                 _logger.LogInformation($"Arguments: {allArguments}");
 
-                var response = ExecuteAndReadResult(fileNameAndArguments[0], allArguments);
+                var response = ExecuteAndReadResult(fileNameAndArguments[0], allArguments, arguments.JobId);
 
 #else
                 var result = "[struct stat=\"OK\", module=\"mProject\", time=223.0]";
@@ -63,11 +67,12 @@ namespace MontageJobExecutor.Controllers {
         }
 
 
-        private ExecutionResult ExecuteAndReadResult(string fileNameAndArgument, StringBuilder allArguments) {
+        private ExecutionResult ExecuteAndReadResult(string fileNameAndArgument, StringBuilder allArguments, string jobId) {
             var process = new Process {
                 StartInfo = new ProcessStartInfo {
                     FileName = $"{fileNameAndArgument}",
                     Arguments = allArguments.ToString(),
+                    WorkingDirectory = Program.GetDirectory(jobId),
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
@@ -76,7 +81,7 @@ namespace MontageJobExecutor.Controllers {
 
             _logger.LogInformation($"Starting process");
 
-            var stopwatch = new Stopwatch();
+            _stopwatch.Start();
             process.Start();
 
             _logger.LogInformation($"Reading stdout");
@@ -88,13 +93,14 @@ namespace MontageJobExecutor.Controllers {
 
             process.WaitForExit();
 
-            var finishTime = stopwatch.ElapsedMilliseconds;
+            var finishTime = _stopwatch.ElapsedMilliseconds;
+            _logger.LogInformation($"Process finished after {finishTime} ms");
             ExecutionResult response = null;
 
             if (fileNameAndArgument.StartsWith("mAdd")) {
-
+                response = ParseResult(result);
             } else if (fileNameAndArgument.StartsWith("mBackground")) {
-                // TODO
+                response = ParseResult(result);
             } else if (fileNameAndArgument.StartsWith("mBgModel")) {
                 response = ParseResult(result);
                 response.ExecutionTime = finishTime.ToString();
@@ -107,7 +113,8 @@ namespace MontageJobExecutor.Controllers {
                 response = ParseResult(result);
                 response.ExecutionTime = finishTime.ToString();
             } else if (fileNameAndArgument.StartsWith("mJPEG")) {
-                // TODO
+                response = ParseResult(result);
+                response.ExecutionTime = finishTime.ToString();
             } else if (fileNameAndArgument.StartsWith("mProject")) {
                 response = ParseResult(result);
             } else {
@@ -163,12 +170,6 @@ namespace MontageJobExecutor.Controllers {
             var styles = NumberStyles.Float;
             var provider = CultureInfo.CreateSpecificCulture("en");
             return double.Parse(time, styles, provider);
-        }
-
-
-        private static string GetDirectory() {
-            var directory = $"{Environment.CurrentDirectory}/{Program.BasePath}";
-            return directory;
         }
     }
 }
